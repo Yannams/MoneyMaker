@@ -36,6 +36,33 @@ npm i
 npm run dev
 ```
 
+## Environnements Supabase
+
+Le projet utilise deux environnements Supabase distants :
+
+- `test` via `.env.development`
+- `production` via `.env.production`
+
+Usage :
+
+```sh
+# Developpement local sur le projet de test
+npm run dev
+
+# Build avec les variables de production
+npm run build
+```
+
+Variables attendues :
+
+- `VITE_SUPABASE_PROJECT_ID`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_FEDAPAY_PUBLIC_KEY`
+- `VITE_FEDAPAY_ENVIRONMENT`
+
+La CLI Supabase doit etre pointee explicitement vers le bon projet avant `db push` ou `functions deploy`.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

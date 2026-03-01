@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Copy, Link2, Loader2, ShoppingCart, Users } fr
 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { paymentLinkGenerationDisabled, paymentLinkGenerationDisabledMessage } from '@/lib/feature-flags';
 import { AppGlobalHeader } from '@/components/AppGlobalHeader';
 import { PageHeading } from '@/components/PageHeading';
 import { ScrollReveal } from '@/components/ScrollReveal';
@@ -119,7 +120,7 @@ const OfferClients = () => {
       if (!offerData) {
         toast({
           title: 'Offre introuvable',
-          description: "Cette offre n'existe pas ou vous n'avez pas acces",
+          description: "Cette offre n'existe pas ou vous n'avez pas accès",
           variant: 'destructive',
         });
         navigate(`/business/${businessId}/offres`);
@@ -242,6 +243,14 @@ const OfferClients = () => {
 
   const handleGeneratePersonalLink = async (clientId: string) => {
     if (!offer) return;
+    if (paymentLinkGenerationDisabled) {
+      toast({
+        title: 'Fonction indisponible',
+        description: paymentLinkGenerationDisabledMessage,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsLinkGeneratingFor(clientId);
 
@@ -282,7 +291,7 @@ const OfferClients = () => {
     await navigator.clipboard.writeText(link);
 
     toast({
-      title: 'Lien personnel copie',
+      title: 'Lien personnel copié',
       description: 'Envoyez ce lien au client pour son prochain paiement.',
     });
   };
@@ -334,7 +343,7 @@ const OfferClients = () => {
             title="Clients uniques"
             value={aggregatedClients.length}
             icon={<Users className="w-6 h-6" />}
-            subtitle="Clients ayant achete cette offre"
+            subtitle="Clients ayant acheté cette offre"
             trend={aggregatedClients.length > 0 ? 'up' : 'neutral'}
             delay={0}
           />
@@ -347,18 +356,18 @@ const OfferClients = () => {
             delay={1}
           />
           <StatCard
-            title="Paiements confirmes"
+            title="Paiements confirmés"
             value={`${totalPaid.toLocaleString()} FCFA`}
             icon={<CheckCircle2 className="w-6 h-6" />}
-            subtitle="Transactions en succes"
+            subtitle="Transactions en succès"
             trend={totalPaid > 0 ? 'up' : 'neutral'}
             delay={2}
           />
           <StatCard
-            title="Clients en regle"
+            title="Clients en règle"
             value={offer?.billing_type === 'recurring' ? compliantCount : '-'}
             icon={<CheckCircle2 className="w-6 h-6" />}
-            subtitle={offer?.billing_type === 'recurring' ? `${compliantCount}/${aggregatedClients.length} a jour` : 'Non applicable (offre ponctuelle)'}
+            subtitle={offer?.billing_type === 'recurring' ? `${compliantCount}/${aggregatedClients.length} à jour` : 'Non applicable (offre ponctuelle)'}
             trend={
               offer?.billing_type === 'recurring'
                 ? aggregatedClients.length === 0
@@ -375,16 +384,22 @@ const OfferClients = () => {
         <section className="soft-panel p-5">
           <p className="text-sm text-muted-foreground">
             Prix: <span className="text-foreground font-semibold">{Number(offer?.price ?? 0).toLocaleString()} FCFA</span> | Type:{' '}
-            <span className="text-foreground font-semibold">{offer?.billing_type === 'recurring' ? 'Recurrente' : 'Ponctuelle'}</span> | Quantite:{' '}
-            <span className="text-foreground font-semibold">{offer?.stock_quantity === null ? 'Illimitee' : offer?.stock_quantity}</span>
+            <span className="text-foreground font-semibold">{offer?.billing_type === 'recurring' ? 'Récurrente' : 'Ponctuelle'}</span> | Quantité:{' '}
+            <span className="text-foreground font-semibold">{offer?.stock_quantity === null ? 'Illimitée' : offer?.stock_quantity}</span>
           </p>
         </section>
+
+        {paymentLinkGenerationDisabled ? (
+          <section className="soft-panel p-4 text-sm text-muted-foreground">
+            La génération de liens personnels est désactivée sur l&apos;environnement de production.
+          </section>
+        ) : null}
 
         {aggregatedClients.length === 0 ? (
           <div className="soft-panel p-10 sm:p-12 text-center">
             <Users className="w-14 h-14 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Aucun client pour cette offre</h2>
-            <p className="text-muted-foreground">Les clients apparaissent ici des qu'une commande est enregistree.</p>
+            <p className="text-muted-foreground">Les clients apparaissent ici dès qu'une commande est enregistrée.</p>
           </div>
         ) : (
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -393,8 +408,8 @@ const OfferClients = () => {
                 <article className="soft-panel p-5 card-hover">
                   <div className="space-y-1">
                     <h3 className="text-base font-semibold text-foreground">{client.name}</h3>
-                    <p className="text-sm text-muted-foreground">{client.phone ?? 'Telephone non renseigne'}</p>
-                    <p className="text-sm text-muted-foreground">{client.email ?? 'Email non renseigne'}</p>
+                    <p className="text-sm text-muted-foreground">{client.phone ?? 'Téléphone non renseigné'}</p>
+                    <p className="text-sm text-muted-foreground">{client.email ?? 'Email non renseigné'}</p>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
@@ -409,14 +424,14 @@ const OfferClients = () => {
                   </div>
 
                   <div className="mt-4 text-xs text-muted-foreground space-y-1">
-                    <p>Derniere commande: <span className="text-foreground">{format(new Date(client.last_order_at), 'dd MMM yyyy', { locale: fr })}</span></p>
-                    <p>Paiements confirmes: <span className="text-foreground">{client.successful_payments}</span></p>
+                    <p>Dernière commande: <span className="text-foreground">{format(new Date(client.last_order_at), 'dd MMM yyyy', { locale: fr })}</span></p>
+                    <p>Paiements confirmés: <span className="text-foreground">{client.successful_payments}</span></p>
                     {offer?.billing_type === 'recurring' ? (
                       <>
                         <p>
                           Prochain paiement:{' '}
                           <span className="text-foreground">
-                            {client.next_due_at ? format(new Date(client.next_due_at), 'dd MMM yyyy', { locale: fr }) : 'Non calcule'}
+                            {client.next_due_at ? format(new Date(client.next_due_at), 'dd MMM yyyy', { locale: fr }) : 'Non calculé'}
                           </span>
                         </p>
                         <p>
@@ -430,7 +445,7 @@ const OfferClients = () => {
                                   : 'text-muted-foreground font-semibold'
                             }
                           >
-                            {client.is_up_to_date === true ? 'En regle' : client.is_up_to_date === false ? 'En retard' : 'Non calcule'}
+                            {client.is_up_to_date === true ? 'En règle' : client.is_up_to_date === false ? 'En retard' : 'Non calculé'}
                           </span>
                         </p>
                       </>
@@ -443,7 +458,8 @@ const OfferClients = () => {
                       size="sm"
                       className="w-full"
                       onClick={() => handleGeneratePersonalLink(client.id)}
-                      disabled={isLinkGeneratingFor === client.id}
+                      disabled={paymentLinkGenerationDisabled || isLinkGeneratingFor === client.id}
+                      title={paymentLinkGenerationDisabled ? paymentLinkGenerationDisabledMessage : undefined}
                     >
                       {isLinkGeneratingFor === client.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
                       Lien personnel

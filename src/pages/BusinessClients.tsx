@@ -141,7 +141,7 @@ const BusinessClients = () => {
       if (!businessData) {
         toast({
           title: 'Business introuvable',
-          description: "Ce business n'existe pas ou vous n'avez pas acces",
+          description: "Ce business n'existe pas ou vous n'avez pas accès",
           variant: 'destructive',
         });
         navigate('/business');
@@ -408,21 +408,21 @@ const BusinessClients = () => {
             delay={1}
           />
           <StatCard
-            title="Paiements confirmes"
+            title="Paiements confirmés"
             value={`${totalPaid.toLocaleString()} FCFA`}
             icon={<CheckCircle2 className="w-6 h-6" />}
-            subtitle="Transactions en succes"
+            subtitle="Transactions en succès"
             trend={totalPaid > 0 ? 'up' : 'neutral'}
             delay={2}
           />
           <StatCard
-            title="Abonnements en regle"
+            title="Abonnements en règle"
             value={`${recurringCompliantCount}/${recurringClientsCount}`}
             icon={<CheckCircle2 className="w-6 h-6" />}
             subtitle={
               recurringUnknownCount > 0
-                ? `${recurringUnknownCount} client(s) non calcule(s)`
-                : 'Clients recurrents a jour'
+                ? `${recurringUnknownCount} client(s) non calculé(s)`
+                : 'Clients récurrents à jour'
             }
             trend={
               recurringClientsCount === 0
@@ -446,7 +446,7 @@ const BusinessClients = () => {
           </div>
 
           {offersSummary.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune commande enregistree pour ce business.</p>
+            <p className="text-sm text-muted-foreground">Aucune commande enregistrée pour ce business.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {offersSummary.map((offer, index) => (
@@ -490,18 +490,18 @@ const BusinessClients = () => {
           {filteredClients.length === 0 ? (
             <div className="soft-panel p-8 text-center">
               <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Aucun client trouve.</p>
+              <p className="text-muted-foreground">Aucun client trouvé.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredClients.map((client, index) => (
                 <ScrollReveal key={client.id} delayMs={index * 60}>
                   <article className="soft-panel p-5 card-hover">
-                    <div className="space-y-1">
-                      <h3 className="text-base font-semibold text-foreground">{client.name}</h3>
-                      <p className="text-sm text-muted-foreground">{client.phone ?? 'Telephone non renseigne'}</p>
-                      <p className="text-sm text-muted-foreground">{client.email ?? 'Email non renseigne'}</p>
-                    </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-foreground">{client.name}</h3>
+                      <p className="text-sm text-muted-foreground">{client.phone ?? 'Téléphone non renseigné'}</p>
+                      <p className="text-sm text-muted-foreground">{client.email ?? 'Email non renseigné'}</p>
+                  </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                       <div className="rounded-lg bg-secondary/40 p-2">
@@ -515,13 +515,13 @@ const BusinessClients = () => {
                     </div>
 
                     <div className="mt-4 text-xs text-muted-foreground space-y-1">
-                      <p>Derniere offre: <span className="text-foreground">{client.last_offer_name}</span></p>
-                      <p>Derniere commande: <span className="text-foreground">{format(new Date(client.last_order_at), 'dd MMM yyyy', { locale: fr })}</span></p>
-                      <p>Paiements confirmes: <span className="text-foreground">{client.successful_payments}</span></p>
+                      <p>Dernière offre: <span className="text-foreground">{client.last_offer_name}</span></p>
+                      <p>Dernière commande: <span className="text-foreground">{format(new Date(client.last_order_at), 'dd MMM yyyy', { locale: fr })}</span></p>
+                      <p>Paiements confirmés: <span className="text-foreground">{client.successful_payments}</span></p>
                       {client.recurring_total > 0 ? (
                         <>
                           <p>
-                            Statut recurrent:{' '}
+                            Statut récurrent:{' '}
                             <span
                               className={
                                 client.recurring_unknown > 0
@@ -532,14 +532,14 @@ const BusinessClients = () => {
                               }
                             >
                               {client.recurring_unknown > 0
-                                ? `${client.recurring_up_to_date}/${client.recurring_total - client.recurring_unknown} en regle (${client.recurring_unknown} non calcule)`
-                                : `${client.recurring_up_to_date}/${client.recurring_total} en regle`}
+                                ? `${client.recurring_up_to_date}/${client.recurring_total - client.recurring_unknown} en règle (${client.recurring_unknown} non calculé)`
+                                : `${client.recurring_up_to_date}/${client.recurring_total} en règle`}
                             </span>
                           </p>
                           <p>
-                            Prochaine echeance:{' '}
+                            Prochaine échéance:{' '}
                             <span className="text-foreground">
-                              {client.next_due_at ? format(new Date(client.next_due_at), 'dd MMM yyyy', { locale: fr }) : 'Non calculee'}
+                              {client.next_due_at ? format(new Date(client.next_due_at), 'dd MMM yyyy', { locale: fr }) : 'Non calculée'}
                             </span>
                           </p>
                         </>

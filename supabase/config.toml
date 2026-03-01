@@ -1,4 +1,7 @@
-project_id = "mrzebtrqjkhlbakfpiwh"
+project_id = "hgfifhhpcgyjexhfjzdq"
 
 [functions.notify-subscription]
+verify_jwt = false
+
+[functions.process-withdrawal]
 verify_jwt = false

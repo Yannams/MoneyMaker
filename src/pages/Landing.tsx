@@ -1,11 +1,13 @@
 import {
   ArrowRight,
+  ArrowRightLeft,
   BellRing,
   BriefcaseBusiness,
   CheckCircle2,
   Link2,
   Menu,
   MessageCircle,
+  PiggyBank,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
@@ -27,27 +29,27 @@ const features = [
     icon: BriefcaseBusiness,
   },
   {
-    title: 'Catalogue d offres',
-    description: 'Produits ou services, ponctuels ou recurrents, avec gestion de quantite.',
+    title: "Catalogue d'offres",
+    description: 'Produits ou services, ponctuels ou récurrents, avec gestion de quantité.',
     icon: ShoppingCart,
   },
   {
     title: 'Liens de paiement',
-    description: 'Un lien personnel par client pour simplifier l encaissement.',
+    description: "Un lien personnel par client pour simplifier l'encaissement.",
     icon: Link2,
   },
   {
-    title: 'Base clients centralisee',
+    title: 'Base clients centralisée',
     description: 'Retrouver commandes, historique et statut client dans une seule vue.',
     icon: Users,
   },
   {
-    title: 'Suivi des echeances',
-    description: 'Voir rapidement qui est en regle, en retard, et quand relancer.',
+    title: 'Suivi des échéances',
+    description: 'Voir rapidement qui est en règle, en retard, et quand relancer.',
     icon: CheckCircle2,
   },
   {
-    title: 'Flux de paiement securise',
+    title: 'Flux de paiement sécurisé',
     description: 'Validation des transactions et journal clair de chaque paiement.',
     icon: ShieldCheck,
   },
@@ -72,13 +74,13 @@ const Landing = () => {
               </div>
               <div>
                 <p className="text-base font-semibold text-foreground">MoneyMaker</p>
-                <p className="text-xs text-muted-foreground">Systeme de gestion pour petit business</p>
+                <p className="text-xs text-muted-foreground">Système de gestion pour petit business</p>
               </div>
             </div>
 
             <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
               <a href="#produit" className="hover:text-foreground transition-colors">Produit</a>
-              <a href="#fonctionnalites" className="hover:text-foreground transition-colors">Fonctionnalites</a>
+              <a href="#fonctionnalites" className="hover:text-foreground transition-colors">Fonctionnalités</a>
               <a href="#roadmap" className="hover:text-foreground transition-colors">Feuille de route</a>
               <a href="#pourquoi" className="hover:text-foreground transition-colors">Pourquoi</a>
             </nav>
@@ -111,7 +113,7 @@ const Landing = () => {
                     </SheetClose>
                     <SheetClose asChild>
                       <a href="#fonctionnalites" className="block rounded-xl border border-border/50 bg-card/60 px-4 py-3 text-sm text-foreground">
-                        Fonctionnalites
+                        Fonctionnalités
                       </a>
                     </SheetClose>
                     <SheetClose asChild>
@@ -155,11 +157,11 @@ const Landing = () => {
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-semibold tracking-tight text-foreground leading-[1.02]">
-                L app de gestion business qui reste simple.
+                L'app de gestion business qui reste simple.
               </h1>
 
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                MoneyMaker aide les petits business a gerer offres, clients, commandes et paiements dans un meme workflow.
+                MoneyMaker aide les petits business à gérer offres, clients, commandes et paiements dans un même workflow.
                 Lance rapidement. Structure mieux. Encaisse proprement.
               </p>
 
@@ -171,7 +173,7 @@ const Landing = () => {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Concu pour les independants, petits commerces et equipes terrain.
+                Conçu pour les indépendants, petits commerces et équipes terrain.
               </p>
             </div>
           </section>
@@ -180,8 +182,8 @@ const Landing = () => {
         <ScrollReveal delayMs={140}>
           <section className="max-w-5xl mx-auto space-y-4">
             <div className="text-center space-y-1">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Apercu produit</p>
-              <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">Une interface orientee action</h2>
+              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Aperçu produit</p>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">Une interface orientée action</h2>
             </div>
 
             <article className="bg-card/70 border border-border/40 rounded-3xl p-6 sm:p-8 lg:p-10 space-y-6 shadow-[0_24px_60px_hsl(0_0%_0%_/_0.24)] backdrop-blur-xl animate-float-soft animate-glow-pulse">
@@ -202,11 +204,11 @@ const Landing = () => {
               </div>
 
               <div className="soft-subtle p-5 space-y-3">
-                <p className="text-xs text-muted-foreground">Actions recentes</p>
+                <p className="text-xs text-muted-foreground">Actions récentes</p>
                 <div className="space-y-2.5 text-sm">
-                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Paiement confirme - 12 000 FCFA</p>
-                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Lien personnel envoye a Yann</p>
-                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Echeance recurrente calculee</p>
+                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Paiement confirmé - 12 000 FCFA</p>
+                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Lien personnel envoyé à Yann</p>
+                  <p className="flex items-center gap-2 text-foreground"><CheckCircle2 className="w-4 h-4 text-primary" /> Échéance récurrente calculée</p>
                 </div>
               </div>
             </article>
@@ -216,9 +218,9 @@ const Landing = () => {
         <ScrollReveal delayMs={200}>
           <section id="fonctionnalites" className="space-y-8">
             <div className="space-y-2 text-center">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Fonctionnalites</p>
-              <h2 className="section-heading">Concentre sur ce qui fait avancer ton business</h2>
-              <p className="section-caption max-w-2xl mx-auto">Une base solide, claire, et orientee execution.</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Fonctionnalités</p>
+              <h2 className="section-heading">Concentré sur ce qui fait avancer ton business</h2>
+              <p className="section-caption max-w-2xl mx-auto">Une base solide, claire, et orientée exécution.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -242,16 +244,47 @@ const Landing = () => {
 
         <ScrollReveal delayMs={260}>
           <section id="roadmap" className="max-w-5xl mx-auto">
-            <article className="bg-card/70 border border-border/40 rounded-3xl p-8 lg:p-10 space-y-6 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Feuille de route</p>
-              <h3 className="text-2xl sm:text-3xl font-semibold text-foreground">La messagerie WhatsApp arrive ensuite</h3>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl">
-                Prochaine etape: envoi automatique de messages WhatsApp pour les rappels d echeance, confirmations de paiement et relances clients.
-                Objectif: reduire les retards et simplifier la communication commerciale.
-              </p>
-              <div className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300 font-medium">
-                <MessageCircle className="w-3.5 h-3.5" />
-                A venir - Rappels automatiques WhatsApp
+            <article className="bg-card/70 border border-border/40 rounded-3xl p-8 lg:p-10 space-y-8 backdrop-blur-sm">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Feuille de route</p>
+                <h3 className="text-2xl sm:text-3xl font-semibold text-foreground">Les prochaines fonctionnalités MoneyMaker</h3>
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
+                  Deux évolutions arrivent pour renforcer le suivi client et la maîtrise financière de chaque business.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-3 items-stretch">
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5 space-y-3">
+                  <div className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border border-amber-400/30 text-amber-300">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    À venir
+                  </div>
+                  <h4 className="text-base font-semibold text-foreground">Rappels automatiques WhatsApp</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Envoi automatique des rappels d'échéance, confirmations de paiement et relances clients pour réduire les retards.
+                  </p>
+                </div>
+
+                <div className="hidden md:flex items-center justify-center">
+                  <div className="h-full min-h-14 w-12 flex items-center justify-center">
+                    <div className="w-12 h-[2px] bg-primary/40 relative">
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center justify-center w-6 h-6 rounded-full border border-primary/30 bg-primary/10 text-primary">
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5 space-y-3">
+                  <div className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border border-primary/30 text-primary">
+                    <PiggyBank className="w-3.5 h-3.5" />
+                    À venir
+                  </div>
+                  <h4 className="text-base font-semibold text-foreground">Gestion de budget</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Suivi des dépenses, objectifs mensuels et alertes budget pour mieux piloter la rentabilité du business.
+                  </p>
+                </div>
               </div>
             </article>
           </section>
@@ -268,11 +301,11 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-primary mt-0.5" />
-                  Sache tout de suite qui est en regle ou en retard.
+                  Sache tout de suite qui est en règle ou en retard.
                 </li>
                 <li className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-primary mt-0.5" />
-                  Passe d un suivi artisanal a un suivi structure.
+                  Passe d'un suivi artisanal à un suivi structuré.
                 </li>
               </ul>
             </article>
@@ -282,8 +315,8 @@ const Landing = () => {
         <ScrollReveal delayMs={340}>
           <section className="bg-card/70 border border-border/40 rounded-3xl p-8 sm:p-11 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 backdrop-blur-sm">
             <div>
-              <h3 className="text-2xl font-semibold text-foreground">Pret a lancer ton espace MoneyMaker ?</h3>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">Connecte-toi et commence a structurer ton business des aujourd hui.</p>
+              <h3 className="text-2xl font-semibold text-foreground">Prêt à lancer ton espace MoneyMaker ?</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">Connecte-toi et commence à structurer ton business dès aujourd'hui.</p>
             </div>
             <Button variant="moneymaker" onClick={() => navigate('/auth')}>
               Commencer

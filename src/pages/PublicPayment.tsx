@@ -143,7 +143,7 @@ const PublicPayment = () => {
       setCustomerEmail(row.linked_client_email ?? '');
     }
     if (!row.is_available) {
-      setErrorMessage(row.unavailable_reason ?? 'Ce lien n est plus disponible');
+      setErrorMessage(row.unavailable_reason ?? "Ce lien n'est plus disponible");
     } else {
       setErrorMessage(null);
     }
@@ -167,7 +167,7 @@ const PublicPayment = () => {
     if (!trimmedName || !trimmedPhone) {
       toast({
         title: 'Erreur',
-        description: 'Nom et telephone sont obligatoires',
+        description: 'Nom et téléphone sont obligatoires',
         variant: 'destructive',
       });
       return;
@@ -203,7 +203,7 @@ const PublicPayment = () => {
     if (!reference) {
       toast({
         title: 'Erreur',
-        description: 'Reference de paiement introuvable',
+        description: 'Référence de paiement introuvable',
         variant: 'destructive',
       });
       return;
@@ -216,7 +216,7 @@ const PublicPayment = () => {
       setManualReference(reference);
       toast({
         title: 'Configuration FedaPay manquante',
-        description: 'Ajoutez VITE_FEDAPAY_PUBLIC_KEY dans .env.',
+        description: 'Ajoutez VITE_FEDAPAY_PUBLIC_KEY dans .env.development ou .env.production.',
         variant: 'destructive',
       });
       return;
@@ -279,7 +279,7 @@ const PublicPayment = () => {
 
         if (finalizeError) {
           toast({
-            title: 'Paiement effectue mais confirmation echouee',
+            title: 'Paiement effectué mais confirmation échouée',
             description: finalizeError.message,
             variant: 'destructive',
           });
@@ -287,8 +287,8 @@ const PublicPayment = () => {
         }
 
         toast({
-          title: 'Paiement confirme',
-          description: 'Merci, votre paiement a ete pris en compte.',
+          title: 'Paiement confirmé',
+          description: 'Merci, votre paiement a été pris en compte.',
         });
       },
     });
@@ -339,7 +339,7 @@ const PublicPayment = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {details?.linked_client_id ? (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-sm text-foreground">
-                  Lien personnel detecte: informations client deja remplies.
+                  Lien personnel détecté: informations client déjà remplies.
                 </div>
               ) : null}
 
@@ -357,7 +357,7 @@ const PublicPayment = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="customer-phone">Telephone *</Label>
+                <Label htmlFor="customer-phone">Téléphone *</Label>
                 <Input
                   id="customer-phone"
                   value={customerPhone}
@@ -391,7 +391,7 @@ const PublicPayment = () => {
 
           {manualReference ? (
             <div className="soft-subtle p-4">
-              <p className="text-sm text-muted-foreground mb-2">Reference de paiement</p>
+              <p className="text-sm text-muted-foreground mb-2">Référence de paiement</p>
               <p className="text-sm font-mono break-all">{manualReference}</p>
             </div>
           ) : null}

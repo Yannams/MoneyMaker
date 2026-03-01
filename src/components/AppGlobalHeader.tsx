@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Building2, LogOut, Menu, ShoppingCart, Users } from 'lucide-react';
+import { Building2, HandCoins, LogOut, Menu, ShoppingCart, Users } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { walletDisabled, walletDisabledMessage } from '@/lib/feature-flags';
 import { MoneyMakerLogo } from '@/components/MoneyMakerLogo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -31,11 +32,13 @@ export const AppGlobalHeader = ({ businessId }: AppGlobalHeaderProps) => {
         segments[4] === 'clients'
       : false;
     const isBusinessClientsPage = businessBasePath ? pathname === `${businessBasePath}/clients` : false;
+    const isWalletPage = businessBasePath ? pathname === `${businessBasePath}/portefeuille` : false;
 
     return {
       isBusinessPage,
       isOffersPage,
       isClientsPage: isBusinessClientsPage || isOfferClientsPage,
+      isWalletPage,
     };
   }, [businessBasePath, businessId, location.pathname]);
 
@@ -61,7 +64,7 @@ export const AppGlobalHeader = ({ businessId }: AppGlobalHeaderProps) => {
           <div className="hidden md:block">
             <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0">
               <LogOut className="w-4 h-4 mr-1" />
-              Deconnexion
+              Déconnexion
             </Button>
           </div>
 
@@ -104,6 +107,18 @@ export const AppGlobalHeader = ({ businessId }: AppGlobalHeaderProps) => {
                       <SheetClose asChild>
                         <Button
                           variant="outline"
+                          className={`w-full justify-start ${navState.isWalletPage ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-card/60'}`}
+                          onClick={() => navigate(`/business/${businessId}/portefeuille`)}
+                          disabled={walletDisabled}
+                          title={walletDisabled ? walletDisabledMessage : undefined}
+                        >
+                          <HandCoins className="w-4 h-4 mr-2" />
+                          Portefeuille
+                        </Button>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Button
+                          variant="outline"
                           className={`w-full justify-start ${navState.isClientsPage ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-card/60'}`}
                           onClick={() => navigate(`/business/${businessId}/clients`)}
                         >
@@ -118,7 +133,7 @@ export const AppGlobalHeader = ({ businessId }: AppGlobalHeaderProps) => {
                     <SheetClose asChild>
                       <Button variant="outline" className="w-full justify-start" onClick={handleSignOut}>
                         <LogOut className="w-4 h-4 mr-2" />
-                        Deconnexion
+                        Déconnexion
                       </Button>
                     </SheetClose>
                   </div>
@@ -150,6 +165,17 @@ export const AppGlobalHeader = ({ businessId }: AppGlobalHeaderProps) => {
                 >
                   <ShoppingCart className="w-4 h-4 mr-1" />
                   Offres
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={navState.isWalletPage ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-card/60'}
+                  onClick={() => navigate(`/business/${businessId}/portefeuille`)}
+                  disabled={walletDisabled}
+                  title={walletDisabled ? walletDisabledMessage : undefined}
+                >
+                  <HandCoins className="w-4 h-4 mr-1" />
+                  Portefeuille
                 </Button>
                 <Button
                   variant="outline"

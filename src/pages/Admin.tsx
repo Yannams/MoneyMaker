@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -176,7 +176,7 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Client supprim�",
+        title: "Client supprimé",
         description: `${member?.name} a été retiré`,
         variant: "destructive",
       });
@@ -226,7 +226,7 @@ const Admin = () => {
       if (updateError) throw updateError;
 
       toast({
-        title: "Demande valid�e",
+        title: "Demande validée",
         description: `${request.name} est maintenant client`,
       });
 
@@ -373,7 +373,7 @@ const Admin = () => {
               className="text-muted-foreground hover:text-primary"
               onClick={() => navigate('/auth')}
             >
-              Retour � l'espace business
+              Retour à l'espace business
             </Button>
           </div>
         </div>
@@ -421,7 +421,7 @@ const Admin = () => {
             delay={0}
           />
           <StatCard
-            title="Clients � jour"
+            title="Clients à jour"
             value={paidMembers.length}
             icon={<CheckCircle className="w-6 h-6" />}
             trend={paidMembers.length === members.length ? "up" : "neutral"}
@@ -474,7 +474,7 @@ const Admin = () => {
                   Aucune demande en attente
                 </h3>
                 <p className="text-muted-foreground">
-                  Les nouvelles demandes d'acces apparaitront ici
+                  Les nouvelles demandes d'accès apparaîtront ici
                 </p>
               </div>
             ) : (
@@ -569,7 +569,7 @@ const Admin = () => {
                           <p className="text-sm text-muted-foreground">{member.phone}</p>
                           <p className="text-xs text-muted-foreground">
                             {renewalDate 
-                              ? `Prochaine �ch�ance: ${format(renewalDate, 'dd MMM yyyy', { locale: fr })}`
+                              ? `Prochaine échéance: ${format(renewalDate, 'dd MMM yyyy', { locale: fr })}`
                               : 'Aucun paiement'
                             }
                           </p>
@@ -652,7 +652,7 @@ const Admin = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. Le client et tous ses paiements seront supprim�s.
+              Cette action est irréversible. Le client et tous ses paiements seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -671,3 +671,4 @@ const Admin = () => {
 };
 
 export default Admin;
+

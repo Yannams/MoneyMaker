@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -7,18 +7,21 @@ import {
   Building2,
   CheckCircle,
   Copy,
+  Image as ImageIcon,
   Link2,
   Loader2,
   Pencil,
   Plus,
   Tag,
   Trash2,
+  Upload,
   Users,
   XCircle,
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { paymentLinkGenerationDisabled, paymentLinkGenerationDisabledMessage } from '@/lib/feature-flags';
 import { AppGlobalHeader } from '@/components/AppGlobalHeader';
 import { PageHeading } from '@/components/PageHeading';
 import { ScrollReveal } from '@/components/ScrollReveal';
@@ -61,6 +64,7 @@ type Business = {
 
 type BillingType = 'one_time' | 'recurring';
 type IntervalType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type OfferKind = 'product' | 'service';
 
 type Offer = {
   id: string;
@@ -71,6 +75,8 @@ type Offer = {
   billing_type: BillingType;
   interval_type: IntervalType | null;
   interval_value: number | null;
+  kind: OfferKind;
+  image_path: string | null;
   active: boolean;
   created_at: string;
 };
@@ -89,12 +95,30 @@ type PaymentLinkRpcRow = {
   token: string;
 };
 
+const OFFER_IMAGE_BUCKET = 'offer-images';
+const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 const getIntervalLabel = (intervalType: Offer['interval_type']) => {
   if (intervalType === 'daily') return 'jour';
   if (intervalType === 'weekly') return 'semaine';
   if (intervalType === 'monthly') return 'mois';
   if (intervalType === 'yearly') return 'an';
   return '';
+};
+
+const getOfferImageUrl = (imagePath: string | null) => {
+  if (!imagePath) return null;
+  const { data } = supabase.storage.from(OFFER_IMAGE_BUCKET).getPublicUrl(imagePath);
+  return data.publicUrl;
+};
+
+const sanitizeFileExtension = (fileName: string) => {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+  if (ext === 'jpeg' || ext === 'jpg') return 'jpg';
+  if (ext === 'png') return 'png';
+  if (ext === 'webp') return 'webp';
+  return 'jpg';
 };
 
 const MesOffres = () => {
@@ -119,6 +143,9 @@ const MesOffres = () => {
     interval_value: '1',
     active: 'active',
   });
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
+  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
 
   const [deleteConfirm, setDeleteConfirm] = useState<Offer | null>(null);
   const [linkFormOpen, setLinkFormOpen] = useState(false);
@@ -138,6 +165,14 @@ const MesOffres = () => {
     }
   }, [authLoading, user, businessId]);
 
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(selectedImagePreviewUrl);
+      }
+    };
+  }, [selectedImagePreviewUrl]);
+
   const fetchData = async () => {
     if (!businessId) return;
     setIsLoading(true);
@@ -145,7 +180,11 @@ const MesOffres = () => {
     try {
       const [businessRes, offersRes] = await Promise.all([
         supabase.from('business').select('id, name, description').eq('id', businessId).maybeSingle(),
-        supabase.from('offres').select('*').eq('business_id', businessId).order('created_at', { ascending: false }),
+        supabase
+          .from('offres')
+          .select('id, business_id, name, price, stock_quantity, billing_type, interval_type, interval_value, kind, image_path, active, created_at')
+          .eq('business_id', businessId)
+          .order('created_at', { ascending: false }),
       ]);
 
       if (businessRes.error) throw businessRes.error;
@@ -154,7 +193,7 @@ const MesOffres = () => {
       if (!businessRes.data) {
         toast({
           title: 'Business introuvable',
-          description: "Ce business n'existe pas ou vous n'avez pas acces",
+          description: "Ce business n'existe pas ou vous n'avez pas accès",
           variant: 'destructive',
         });
         navigate('/business');
@@ -162,7 +201,7 @@ const MesOffres = () => {
       }
 
       setBusiness(businessRes.data);
-      setOffers((offersRes.data ?? []) as Offer[]);
+      setOffers((offersRes.data ?? []) as unknown as Offer[]);
     } catch (error: any) {
       toast({
         title: 'Erreur',
@@ -176,6 +215,10 @@ const MesOffres = () => {
   };
 
   const resetForm = () => {
+    if (selectedImagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+    }
+
     setForm({
       name: '',
       price: '',
@@ -186,6 +229,9 @@ const MesOffres = () => {
       active: 'active',
     });
     setEditingOffer(null);
+    setSelectedImageFile(null);
+    setSelectedImagePreviewUrl(null);
+    setRemoveCurrentImage(false);
   };
 
   const openCreateDialog = () => {
@@ -194,6 +240,10 @@ const MesOffres = () => {
   };
 
   const openEditDialog = (offer: Offer) => {
+    if (selectedImagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+    }
+
     setEditingOffer(offer);
     setForm({
       name: offer.name,
@@ -204,7 +254,61 @@ const MesOffres = () => {
       interval_value: String(offer.interval_value ?? 1),
       active: offer.active ? 'active' : 'inactive',
     });
+    setSelectedImageFile(null);
+    setSelectedImagePreviewUrl(getOfferImageUrl(offer.image_path));
+    setRemoveCurrentImage(false);
     setFormOpen(true);
+  };
+
+  const onImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0] ?? null;
+
+    if (!nextFile) {
+      setSelectedImageFile(null);
+      if (editingOffer?.image_path && !removeCurrentImage) {
+        setSelectedImagePreviewUrl(getOfferImageUrl(editingOffer.image_path));
+      } else {
+        setSelectedImagePreviewUrl(null);
+      }
+      return;
+    }
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(nextFile.type)) {
+      toast({
+        title: 'Format invalide',
+        description: 'Formats acceptés: JPG, PNG ou WebP.',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    if (nextFile.size > MAX_IMAGE_SIZE_BYTES) {
+      toast({
+        title: 'Image trop lourde',
+        description: 'Taille maximale: 2 Mo.',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    if (selectedImagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+    }
+
+    setSelectedImageFile(nextFile);
+    setRemoveCurrentImage(false);
+    setSelectedImagePreviewUrl(URL.createObjectURL(nextFile));
+  };
+
+  const handleRemoveImage = () => {
+    if (selectedImagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+    }
+    setSelectedImageFile(null);
+    setSelectedImagePreviewUrl(null);
+    setRemoveCurrentImage(true);
   };
 
   const handleSaveOffer = async (e: React.FormEvent) => {
@@ -230,7 +334,7 @@ const MesOffres = () => {
     if (!Number.isFinite(priceValue) || priceValue < 0) {
       toast({
         title: 'Erreur',
-        description: 'Le prix doit etre un nombre valide superieur ou egal a 0',
+        description: 'Le prix doit être un nombre valide supérieur ou égal à 0',
         variant: 'destructive',
       });
       return;
@@ -242,7 +346,7 @@ const MesOffres = () => {
     ) {
       toast({
         title: 'Erreur',
-        description: 'La quantite doit etre un entier superieur ou egal a 0',
+        description: 'La quantité doit être un entier supérieur ou égal à 0',
         variant: 'destructive',
       });
       return;
@@ -251,7 +355,7 @@ const MesOffres = () => {
     if (isRecurring && (!Number.isFinite(intervalValue) || intervalValue <= 0)) {
       toast({
         title: 'Erreur',
-        description: "La frequence de l'offre recurrente doit etre superieure a 0",
+        description: "La fréquence de l'offre récurrente doit être supérieure à 0",
         variant: 'destructive',
       });
       return;
@@ -270,45 +374,91 @@ const MesOffres = () => {
       active: form.active === 'active',
     };
 
-    if (editingOffer) {
-      const { error } = await supabase.from('offres').update(payload).eq('id', editingOffer.id);
-      setIsSaving(false);
+    try {
+      let savedOffer: { id: string; image_path: string | null } | null = null;
 
-      if (error) {
-        toast({
-          title: 'Erreur',
-          description: error.message,
-          variant: 'destructive',
-        });
-        return;
+      if (editingOffer) {
+        const { data, error } = await supabase
+          .from('offres')
+          .update(payload)
+          .eq('id', editingOffer.id)
+          .select('id, image_path')
+          .single();
+
+        if (error) throw error;
+        savedOffer = data as unknown as { id: string; image_path: string | null };
+      } else {
+        const { data, error } = await supabase
+          .from('offres')
+          .insert(payload)
+          .select('id, image_path')
+          .single();
+
+        if (error) throw error;
+        savedOffer = data as unknown as { id: string; image_path: string | null };
+      }
+
+      if (!savedOffer?.id) {
+        throw new Error("Impossible d'identifier l'offre enregistrée");
+      }
+
+      const previousImagePath = savedOffer.image_path;
+      let nextImagePath = previousImagePath;
+
+      if (selectedImageFile) {
+        const extension = sanitizeFileExtension(selectedImageFile.name);
+        const uploadPath = `business/${businessId}/offers/${savedOffer.id}/${Date.now()}.${extension}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(OFFER_IMAGE_BUCKET)
+          .upload(uploadPath, selectedImageFile, {
+            cacheControl: '3600',
+            contentType: selectedImageFile.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(`Offre enregistrée mais image non envoyée: ${uploadError.message}`);
+        }
+
+        nextImagePath = uploadPath;
+
+        if (previousImagePath) {
+          await supabase.storage.from(OFFER_IMAGE_BUCKET).remove([previousImagePath]);
+        }
+      } else if (removeCurrentImage && previousImagePath) {
+        await supabase.storage.from(OFFER_IMAGE_BUCKET).remove([previousImagePath]);
+        nextImagePath = null;
+      }
+
+      if (nextImagePath !== previousImagePath) {
+        const { error: imagePathError } = await supabase
+          .from('offres')
+          .update({ image_path: nextImagePath } as never)
+          .eq('id', savedOffer.id);
+
+        if (imagePathError) {
+          throw imagePathError;
+        }
       }
 
       toast({
-        title: 'Offre modifiee',
-        description: `${name} a ete mise a jour`,
+        title: editingOffer ? 'Offre modifiée' : 'Offre créée',
+        description: editingOffer ? `${name} a été mise à jour` : `${name} a été ajoutée`,
       });
-    } else {
-      const { error } = await supabase.from('offres').insert(payload);
-      setIsSaving(false);
 
-      if (error) {
-        toast({
-          title: 'Erreur',
-          description: error.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
+      setFormOpen(false);
+      resetForm();
+      await fetchData();
+    } catch (error: any) {
       toast({
-        title: 'Offre creee',
-        description: `${name} a ete ajoutee`,
+        title: 'Erreur',
+        description: error.message ?? "Impossible d'enregistrer l'offre",
+        variant: 'destructive',
       });
+    } finally {
+      setIsSaving(false);
     }
-
-    setFormOpen(false);
-    resetForm();
-    await fetchData();
   };
 
   const handleDeleteOffer = async () => {
@@ -326,9 +476,13 @@ const MesOffres = () => {
       return;
     }
 
+    if (current.image_path) {
+      await supabase.storage.from(OFFER_IMAGE_BUCKET).remove([current.image_path]);
+    }
+
     toast({
-      title: 'Offre supprimee',
-      description: `${current.name} a ete retiree`,
+      title: 'Offre supprimée',
+      description: `${current.name} a été retirée`,
     });
 
     await fetchData();
@@ -340,6 +494,15 @@ const MesOffres = () => {
   };
 
   const openLinkDialog = (offer: Offer) => {
+    if (paymentLinkGenerationDisabled) {
+      toast({
+        title: 'Fonction indisponible',
+        description: paymentLinkGenerationDisabledMessage,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSelectedOfferForLink(offer);
     setGeneratedPaymentLink('');
     setLinkFormOpen(true);
@@ -351,6 +514,14 @@ const MesOffres = () => {
 
   const handleGeneratePaymentLink = async () => {
     if (!selectedOfferForLink) return;
+    if (paymentLinkGenerationDisabled) {
+      toast({
+        title: 'Fonction indisponible',
+        description: paymentLinkGenerationDisabledMessage,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsGeneratingLink(true);
 
@@ -396,8 +567,8 @@ const MesOffres = () => {
     }
 
     toast({
-      title: 'Lien de paiement genere',
-      description: 'Lien copie. Le client completera ses informations avant redirection vers le paiement.',
+      title: 'Lien de paiement généré',
+      description: 'Lien copié. Le client complétera ses informations avant redirection vers le paiement.',
     });
   };
 
@@ -436,7 +607,7 @@ const MesOffres = () => {
             <>
               <Button variant="moneymaker" size="sm" onClick={openCreateDialog}>
                 <Plus className="w-4 h-4 mr-1" />
-                Creer une offre
+                Créer une offre
               </Button>
               <Button variant="outline" size="sm" onClick={() => navigate('/business')}>
                 <ArrowLeft className="w-4 h-4 mr-1" />
@@ -445,6 +616,12 @@ const MesOffres = () => {
             </>
           )}
         />
+
+        {paymentLinkGenerationDisabled ? (
+          <section className="mb-6 rounded-2xl border border-border/70 bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">
+            La génération de liens clients est désactivée sur l&apos;environnement de production.
+          </section>
+        ) : null}
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
           <StatCard
@@ -459,12 +636,12 @@ const MesOffres = () => {
             title="Offres actives"
             value={activeCount}
             icon={<CheckCircle className="w-6 h-6" />}
-            subtitle={activeCount > 0 ? 'Disponibles a la vente' : 'Aucune offre active'}
+            subtitle={activeCount > 0 ? 'Disponibles à la vente' : 'Aucune offre active'}
             trend={activeCount > 0 ? 'up' : 'down'}
             delay={1}
           />
           <StatCard
-            title="Offres recurrentes"
+            title="Offres récurrentes"
             value={recurringCount}
             icon={<Building2 className="w-6 h-6" />}
             subtitle="Abonnements ou facturation cyclique"
@@ -477,10 +654,10 @@ const MesOffres = () => {
           <div className="soft-panel p-10 sm:p-12 text-center">
             <Tag className="w-14 h-14 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Aucune offre pour ce business</h2>
-            <p className="text-muted-foreground mb-6">Creez votre premiere offre pour ce business.</p>
+            <p className="text-muted-foreground mb-6">Créez votre première offre pour ce business.</p>
             <Button variant="moneymaker" onClick={openCreateDialog}>
               <Plus className="w-4 h-4 mr-1" />
-              Creer une offre
+              Créer une offre
             </Button>
           </div>
         ) : (
@@ -488,11 +665,26 @@ const MesOffres = () => {
             {offers.map((offer, index) => (
               <ScrollReveal key={offer.id} delayMs={index * 70}>
                 <article className="soft-panel p-5 card-hover">
+                  <div className="mb-4 overflow-hidden rounded-xl border border-border/60 bg-secondary/40 h-44 flex items-center justify-center">
+                    {offer.image_path ? (
+                      <img
+                        src={getOfferImageUrl(offer.image_path) ?? ''}
+                        alt={`Image de ${offer.name}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground text-sm">
+                        <ImageIcon className="w-5 h-5" />
+                        <span>Aucune image</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">{offer.name}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Creee le {format(new Date(offer.created_at), 'dd MMM yyyy', { locale: fr })}
+                        Créée le {format(new Date(offer.created_at), 'dd MMM yyyy', { locale: fr })}
                       </p>
                     </div>
 
@@ -508,10 +700,10 @@ const MesOffres = () => {
                   <div className="space-y-2">
                     <p className="text-2xl font-bold text-foreground">{offer.price.toLocaleString()} FCFA</p>
                     <p className="text-sm text-muted-foreground">
-                      Quantite: {offer.stock_quantity === null ? 'Illimitee' : `${offer.stock_quantity} disponible(s)`}
+                      Quantité: {offer.stock_quantity === null ? 'Illimitée' : `${offer.stock_quantity} disponible(s)`}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Type: {offer.billing_type === 'one_time' ? 'Ponctuelle' : 'Recurrente'}
+                      Type: {offer.billing_type === 'one_time' ? 'Ponctuelle' : 'Récurrente'}
                     </p>
 
                     {offer.billing_type === 'recurring' ? (
@@ -532,7 +724,13 @@ const MesOffres = () => {
                       <Pencil className="w-4 h-4 mr-1" />
                       Modifier
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => openLinkDialog(offer)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openLinkDialog(offer)}
+                      disabled={paymentLinkGenerationDisabled}
+                      title={paymentLinkGenerationDisabled ? paymentLinkGenerationDisabledMessage : undefined}
+                    >
                       <Link2 className="w-4 h-4 mr-1" />
                       Lien client
                     </Button>
@@ -566,10 +764,44 @@ const MesOffres = () => {
       >
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{editingOffer ? "Modifier l'offre" : 'Creer une offre'}</DialogTitle>
+            <DialogTitle className="text-foreground">{editingOffer ? "Modifier l'offre" : 'Créer une offre'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSaveOffer} className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="offer-image">Image (optionnelle)</Label>
+                <span className="text-xs text-muted-foreground">JPG, PNG ou WebP · max 2 Mo</span>
+              </div>
+              <Input
+                id="offer-image"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={onImageFileChange}
+              />
+              <label htmlFor="offer-image" className="block cursor-pointer">
+                <div className="h-44 rounded-lg overflow-hidden border border-border/60 bg-secondary/40">
+                  {selectedImagePreviewUrl ? (
+                    <img src={selectedImagePreviewUrl} alt="Prévisualisation" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Upload className="w-6 h-6" />
+                      <span className="text-sm">Ajouter une image</span>
+                    </div>
+                  )}
+                </div>
+              </label>
+
+              {selectedImagePreviewUrl ? (
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" size="sm" onClick={handleRemoveImage}>
+                    Retirer l'image
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="offer-name">Nom de l'offre *</Label>
               <Input
@@ -598,7 +830,7 @@ const MesOffres = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="offer-stock-quantity">Quantite disponible</Label>
+              <Label htmlFor="offer-stock-quantity">Quantité disponible</Label>
               <Input
                 id="offer-stock-quantity"
                 type="number"
@@ -606,7 +838,7 @@ const MesOffres = () => {
                 step="1"
                 value={form.stock_quantity}
                 onChange={(event) => setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))}
-                placeholder="Ex: 5 (laisser vide pour illimite)"
+                placeholder="Ex: 5 (laisser vide pour illimité)"
                 className="bg-secondary border-border"
               />
             </div>
@@ -622,7 +854,7 @@ const MesOffres = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="one_time">Ponctuelle</SelectItem>
-                  <SelectItem value="recurring">Recurrente</SelectItem>
+                  <SelectItem value="recurring">Récurrente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -648,7 +880,7 @@ const MesOffres = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="offer-interval-value">Frequence *</Label>
+                  <Label htmlFor="offer-interval-value">Fréquence *</Label>
                   <Input
                     id="offer-interval-value"
                     type="number"
@@ -685,7 +917,7 @@ const MesOffres = () => {
               </Button>
               <Button type="submit" variant="moneymaker" disabled={isSaving}>
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                {editingOffer ? 'Enregistrer les modifications' : "Creer l'offre"}
+                {editingOffer ? 'Enregistrer les modifications' : "Créer l'offre"}
               </Button>
             </DialogFooter>
           </form>
@@ -702,19 +934,19 @@ const MesOffres = () => {
         <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">
-              Generer un lien client
+              Générer un lien client
               {selectedOfferForLink ? ` - ${selectedOfferForLink.name}` : ''}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Ce lien ouvre un mini formulaire MoneyMaker. Le client renseigne ses informations, puis est redirige vers l'agregateur.
+              Ce lien ouvre un mini formulaire MoneyMaker. Le client renseigne ses informations, puis est redirigé vers l'agrégateur.
             </p>
 
             {generatedPaymentLink ? (
               <div className="space-y-2">
-                <Label htmlFor="generated-payment-link">Lien genere</Label>
+                <Label htmlFor="generated-payment-link">Lien généré</Label>
                 <div className="flex gap-2">
                   <Input id="generated-payment-link" value={generatedPaymentLink} readOnly className="bg-secondary border-border" />
                   <Button
@@ -723,7 +955,7 @@ const MesOffres = () => {
                     onClick={async () => {
                       await navigator.clipboard.writeText(generatedPaymentLink);
                       toast({
-                        title: 'Lien copie',
+                        title: 'Lien copié',
                         description: 'Le lien de paiement est dans le presse-papiers',
                       });
                     }}
@@ -738,9 +970,15 @@ const MesOffres = () => {
               <Button type="button" variant="outline" onClick={() => setLinkFormOpen(false)}>
                 Fermer
               </Button>
-              <Button type="button" variant="moneymaker" disabled={isGeneratingLink} onClick={handleGeneratePaymentLink}>
+              <Button
+                type="button"
+                variant="moneymaker"
+                disabled={paymentLinkGenerationDisabled || isGeneratingLink}
+                onClick={handleGeneratePaymentLink}
+                title={paymentLinkGenerationDisabled ? paymentLinkGenerationDisabledMessage : undefined}
+              >
                 {isGeneratingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Generer le lien
+                Générer le lien
               </Button>
             </DialogFooter>
           </div>
@@ -752,7 +990,7 @@ const MesOffres = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette offre ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irreversible. L'offre sera supprimee definitivement.
+              Cette action est irréversible. L'offre sera supprimée définitivement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

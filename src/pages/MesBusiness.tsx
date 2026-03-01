@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2, Loader2, Pencil, Plus, ShoppingCart, Trash2, Users, Wallet } from 'lucide-react';
+import { Building2, HandCoins, Loader2, Pencil, Plus, ShoppingCart, Trash2, Users, Wallet } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { walletDisabled, walletDisabledMessage } from '@/lib/feature-flags';
 import { AppGlobalHeader } from '@/components/AppGlobalHeader';
 import { PageHeading } from '@/components/PageHeading';
 import { ScrollReveal } from '@/components/ScrollReveal';
@@ -106,7 +107,7 @@ const MesBusiness = () => {
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
-        setTimeout(() => reject(new Error('Delai depasse. Verifiez votre connexion et reessayez.')), timeoutMs);
+        setTimeout(() => reject(new Error('Délai dépassé. Vérifiez votre connexion et réessayez.')), timeoutMs);
       }),
     ]);
   };
@@ -345,7 +346,7 @@ const MesBusiness = () => {
     if (!businessmanId) {
       toast({
         title: 'Erreur',
-        description: 'Profil business non initialise',
+        description: 'Profil business non initialisé',
         variant: 'destructive',
       });
       return;
@@ -381,8 +382,8 @@ const MesBusiness = () => {
     }
 
     toast({
-      title: editingBusiness ? 'Business modifie' : 'Business cree',
-      description: editingBusiness ? `${trimmedName} a ete mis a jour` : `${trimmedName} a ete ajoute`,
+      title: editingBusiness ? 'Business modifié' : 'Business créé',
+      description: editingBusiness ? `${trimmedName} a été mis à jour` : `${trimmedName} a été ajouté`,
     });
 
     setFormOpen(false);
@@ -409,8 +410,8 @@ const MesBusiness = () => {
     }
 
     toast({
-      title: 'Business supprime',
-      description: `${current.name} a ete retire`,
+      title: 'Business supprimé',
+      description: `${current.name} a été retiré`,
     });
 
     await fetchBusinesses(businessmanId);
@@ -445,10 +446,16 @@ const MesBusiness = () => {
           actions={(
             <Button variant="moneymaker" size="sm" onClick={openCreateDialog}>
               <Plus className="w-4 h-4 mr-1" />
-              Creer un business
+              Créer un business
             </Button>
           )}
         />
+
+        {walletDisabled ? (
+          <section className="mb-6 rounded-2xl border border-border/70 bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">
+            Le portefeuille est désactivé sur l&apos;environnement de production.
+          </section>
+        ) : null}
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           <StatCard
@@ -463,7 +470,7 @@ const MesBusiness = () => {
             title="Offres totales"
             value={portfolioStats.totalOffers}
             icon={<ShoppingCart className="w-6 h-6" />}
-            subtitle="Produits et services publies"
+            subtitle="Produits et services publiés"
             trend={portfolioStats.totalOffers > 0 ? 'up' : 'neutral'}
             delay={1}
           />
@@ -479,7 +486,7 @@ const MesBusiness = () => {
             title="Encaisse total"
             value={`${portfolioStats.totalRevenue.toLocaleString()} FCFA`}
             icon={<Wallet className="w-6 h-6" />}
-            subtitle={`${portfolioStats.totalOrders} commande(s) enregistree(s)`}
+            subtitle={`${portfolioStats.totalOrders} commande(s) enregistrée(s)`}
             trend={portfolioStats.totalRevenue > 0 ? 'up' : 'neutral'}
             delay={3}
           />
@@ -489,10 +496,10 @@ const MesBusiness = () => {
           <div className="soft-panel p-10 sm:p-12 text-center">
             <Building2 className="w-14 h-14 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Aucun business pour le moment</h2>
-            <p className="text-muted-foreground mb-6">Creez votre premier business pour commencer votre gestion.</p>
+            <p className="text-muted-foreground mb-6">Créez votre premier business pour commencer votre gestion.</p>
             <Button variant="moneymaker" onClick={openCreateDialog}>
               <Plus className="w-4 h-4 mr-1" />
-              Creer un business
+              Créer un business
             </Button>
           </div>
         ) : (
@@ -507,7 +514,7 @@ const MesBusiness = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">{business.name}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Cree le {format(new Date(business.created_at), 'dd MMM yyyy', { locale: fr })}
+                        Créé le {format(new Date(business.created_at), 'dd MMM yyyy', { locale: fr })}
                       </p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary">
@@ -520,6 +527,20 @@ const MesBusiness = () => {
                   </p>
 
                   <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-card/60"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate(`/business/${business.id}/portefeuille`);
+                      }}
+                      disabled={walletDisabled}
+                      title={walletDisabled ? walletDisabledMessage : undefined}
+                    >
+                      <HandCoins className="w-4 h-4 mr-1" />
+                      Portefeuille
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -564,7 +585,7 @@ const MesBusiness = () => {
       >
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{editingBusiness ? 'Modifier le business' : 'Creer un business'}</DialogTitle>
+            <DialogTitle className="text-foreground">{editingBusiness ? 'Modifier le business' : 'Créer un business'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSaveBusiness} className="space-y-4">
@@ -586,7 +607,7 @@ const MesBusiness = () => {
                 id="business-description"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Decrivez votre activite en quelques lignes"
+                placeholder="Décrivez votre activité en quelques lignes"
                 className="bg-secondary border-border min-h-28"
               />
             </div>
@@ -597,7 +618,7 @@ const MesBusiness = () => {
               </Button>
               <Button type="submit" variant="moneymaker" disabled={isSaving}>
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                {editingBusiness ? 'Enregistrer les modifications' : 'Creer le business'}
+                {editingBusiness ? 'Enregistrer les modifications' : 'Créer le business'}
               </Button>
             </DialogFooter>
           </form>
@@ -609,7 +630,7 @@ const MesBusiness = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce business ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irreversible. Le business sera supprime definitivement.
+              Cette action est irréversible. Le business sera supprimé définitivement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
